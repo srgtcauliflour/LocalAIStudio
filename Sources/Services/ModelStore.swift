@@ -27,9 +27,10 @@ actor ModelStore {
 
         return urls.compactMap { url in
             let values = try? url.resourceValues(forKeys: [.fileSizeKey, .isDirectoryKey])
-            guard values?.isDirectory != true else { return nil }
-
             let ext = url.pathExtension.lowercased()
+            guard ext != "partial" else { return nil }
+            if values?.isDirectory == true && ext != "mlpackage" { return nil }
+
             let format: ModelFormat
             let task: ModelTask
             switch ext {
@@ -47,12 +48,13 @@ actor ModelStore {
                 task = .unclassified
             }
 
+            let size = values?.isDirectory == true ? directorySize(at: url) : Int64(values?.fileSize ?? 0)
             return LocalModel(
                 name: url.deletingPathExtension().lastPathComponent,
                 url: url,
                 format: format,
                 task: task,
-                fileSize: Int64(values?.fileSize ?? 0)
+                fileSize: size
             )
         }.sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
     }
@@ -71,5 +73,18 @@ actor ModelStore {
             .replacingOccurrences(of: "..", with: "")
         let safeFilename = URL(fileURLWithPath: filename).lastPathComponent
         return try modelsDirectory.appendingPathComponent("\(safeRepository)-\(safeFilename)")
+    }
+
+    private func directorySize(at url: URL) -> Int64 {
+        guard let enumerator = fileManager.enumerator(
+            at: url,
+            includingPropertiesForKeys: [.fileSizeKey],
+            options: [.skipsHiddenFiles]
+        ) else { return 0 }
+        var total: Int64 = 0
+        for case let item as URL in enumerator {
+            total += Int64((try? item.resourceValues(forKeys: [.fileSizeKey]).fileSize) ?? 0)
+        }
+        return total
     }
 }
