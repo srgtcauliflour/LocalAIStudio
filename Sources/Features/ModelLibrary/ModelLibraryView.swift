@@ -12,7 +12,8 @@ struct ModelLibraryView: View {
     @State private var downloadingFile: String?
     @State private var downloadProgress = 0.0
     @State private var statusMessage: String?
-    @State private var errorMessage: String?\n    @State private var showingFileImporter = false
+    @State private var errorMessage: String?
+    @State private var showingFileImporter = false
 
     private let hub = HuggingFaceHub()
     private let downloader = ModelDownloadManager()
@@ -58,7 +59,11 @@ struct ModelLibraryView: View {
                         .padding(12)
                         .background(Color.studioPanel, in: RoundedRectangle(cornerRadius: 12))
 
-                        HStack {\n                            Button { showingFileImporter = true } label: { Label("Import from Files", systemImage: "folder.badge.plus") }\n                            Spacer()\n                        }\n                        Text("Search is online; downloaded model files are stored locally. Prompts are never sent to Hugging Face.")
+                        HStack {
+                            Button { showingFileImporter = true } label: { Label("Import from Files", systemImage: "folder.badge.plus") }
+                            Spacer()
+                        }
+                        Text("Search is online; downloaded model files are stored locally. Prompts are never sent to Hugging Face.")
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
@@ -133,7 +138,14 @@ struct ModelLibraryView: View {
                 .padding()
             }
             .background(Color.studioBackground)
-            .navigationBarTitleDisplayMode(.inline)\n            .fileImporter(\n                isPresented: $showingFileImporter,\n                allowedContentTypes: [.data],\n                allowsMultipleSelection: true\n            ) { result in\n                Task { await importFiles(result) }\n            }
+            .navigationBarTitleDisplayMode(.inline)
+            .fileImporter(
+                isPresented: $showingFileImporter,
+                allowedContentTypes: [.data],
+                allowsMultipleSelection: true
+            ) { result in
+                Task { await importFiles(result) }
+            }
         }
     }
 
