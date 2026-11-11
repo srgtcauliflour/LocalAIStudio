@@ -1,0 +1,22 @@
+name: iOS Build
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+on:
+  push:
+    branches: [main, "feature/**"]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: xcode-27
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install XcodeGen
+        run: brew install xcodegen
+      - name: Generate Xcode project
+        run: xcodegen generate
+      - name: Build for generic iOS device
+        run: xcodebuild -project LocalAIStudio.xcodeproj -scheme LocalAIStudio -destination 'generic/platform=iOS' -sdk iphoneos -configuration Debug CODE_SIGNING_ALLOWED=NO build
