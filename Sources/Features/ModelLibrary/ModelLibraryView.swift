@@ -4,6 +4,8 @@ import UniformTypeIdentifiers
 struct ModelLibraryView: View {
     @Environment(AppState.self) private var appState
     @State private var query = ""
+    @State private var searchKind = "Chat"
+    private let imageVariant = "original/compiled"
     @State private var searchResults: [HuggingFaceModel] = []
     @State private var selectedRepository: String?
     @State private var repositoryFiles: [HuggingFaceFile] = []
@@ -39,8 +41,13 @@ struct ModelLibraryView: View {
                         Text("HUGGING FACE")
                             .font(.caption.bold())
                             .foregroundStyle(.secondary)
+                        Picker("Model type", selection: $searchKind) {
+                            Text("Chat (GGUF)").tag("Chat")
+                            Text("Images (Core ML)").tag("Images")
+                        }
+                        .pickerStyle(.segmented)
                         HStack {
-                            TextField("Search GGUF chat models", text: $query)
+                            TextField(searchKind == "Chat" ? "Search GGUF chat models" : "Search Core ML image models", text: $query)
                                 .textInputAutocapitalization(.never)
                                 .autocorrectionDisabled()
                                 .submitLabel(.search)
@@ -165,7 +172,7 @@ struct ModelLibraryView: View {
                 Task { await loadFiles(for: model) }
             } label: {
                 HStack {
-                    Text(selectedRepository == model.id ? "Hide model files" : "Choose a GGUF file")
+                    Text(selectedRepository == model.id ? "Hide model files" : (searchKind == "Chat" ? "Choose a GGUF file" : "Inspect Core ML bundle"))
                     Spacer()
                     if isLoadingFiles && selectedRepository == model.id {
                         ProgressView()
@@ -226,9 +233,11 @@ struct ModelLibraryView: View {
         statusMessage = nil
         defer { isSearching = false }
         do {
-            searchResults = try await hub.searchGGUFModels(query: query)
+            searchResults = searchKind == "Chat"
+                ? try await hub.searchGGUFModels(query: query)
+                : try await hub.searchCoreMLImageModels(query: query.isEmpty ? "coreml-stable-diffusion" : query)
             if searchResults.isEmpty {
-                statusMessage = "No GGUF models matched that search."
+                statusMessage = searchKind == "Chat" ? "No GGUF models matched that search." : "No Core ML image models matched that search."
             }
         } catch {
             errorMessage = error.localizedDescription
@@ -248,9 +257,11 @@ struct ModelLibraryView: View {
         errorMessage = nil
         defer { isLoadingFiles = false }
         do {
-            repositoryFiles = try await hub.files(in: model.id)
+            repositoryFiles = searchKind == "Chat"
+                ? try await hub.files(in: model.id)
+                : try await hub.coreMLBundleFiles(in: model.id, variant: imageVariant)
             if repositoryFiles.isEmpty {
-                errorMessage = "No GGUF files were found in \(model.id)."
+                errorMessage = searchKind == "Chat" ? "No GGUF files were found in \(model.id)." : "No compiled Core ML bundle was found in \(model.id)."
             }
         } catch {
             errorMessage = error.localizedDescription
@@ -276,6 +287,34 @@ struct ModelLibraryView: View {
             }
             await appState.refreshModels()
             statusMessage = "Downloaded \(file.path). It is now stored on this device."
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
+    @MainActor
+    private func installImageBundle(model: HuggingFaceModel) async {
+        guard downloadingFile == nil, !repositoryFiles.isEmpty else { return }
+        downloadingFile = model.id
+        downloadProgress = 0
+        errorMessage = nil
+        statusMessage = nil
+        defer { downloadingFile = nil }
+        do {
+            let prefix = imageVariant + "/"
+            let root = try await appState.modelStore.coreMLBundleDestination(repository: model.id, variant: imageVariant)
+            for (index, file) in repositoryFiles.enumerated() {
+                try Task.checkCancellation()
+                let remoteURL = try hub.downloadURL(repository: model.id, filename: file.path)
+                let destination = try await appState.modelStore.bundleFileDestination(root: root, remotePath: file.path, prefix: prefix)
+                let baseProgress = Double(index) / Double(repositoryFiles.count)
+                let fileWeight = 1.0 / Double(repositoryFiles.count)
+                _ = try await downloader.download(from: remoteURL, to: destination) { value in
+                    Task { @MainActor in self.downloadProgress = min(1, baseProgress + value * fileWeight) }
+                }
+            }
+            await appState.refreshModels()
+            statusMessage = "Core ML bundle installed locally. Open Image Studio to load it."
         } catch {
             errorMessage = error.localizedDescription
         }
