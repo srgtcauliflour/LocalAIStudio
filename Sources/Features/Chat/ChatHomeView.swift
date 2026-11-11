@@ -65,7 +65,7 @@ struct ChatHomeView: View {
                     if let status = appState.chatRuntimeMessage {
                         Text(status)
                             .font(.caption)
-                            .foregroundStyle(appState.activeChatModelID == nil ? .secondary : .green)
+                            .foregroundStyle(appState.activeChatModelID == nil ? Color.secondary : Color.green)
                     }
                 }
                 .padding()
