@@ -16,6 +16,7 @@ actor ModelDownloadManager {
     ) async throws -> URL {
         let partial = destination.appendingPathExtension("partial")
         let fileManager = FileManager.default
+        try fileManager.createDirectory(at: destination.deletingLastPathComponent(), withIntermediateDirectories: true)
         let existingBytes = (try? fileManager.attributesOfItem(atPath: partial.path)[.size] as? NSNumber)?
             .int64Value ?? 0
 
