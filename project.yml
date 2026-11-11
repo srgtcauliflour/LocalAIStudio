@@ -1,0 +1,34 @@
+name: LocalAIStudio
+options:
+  bundleIdPrefix: com.srgtcauliflour
+  deploymentTarget:
+    iOS: "18.0"
+  createIntermediateGroups: true
+settings:
+  base:
+    SWIFT_VERSION: "5.10"
+    TARGETED_DEVICE_FAMILY: "1"
+    GENERATE_INFOPLIST_FILE: YES
+    INFOPLIST_KEY_CFBundleDisplayName: "Local AI Studio"
+    INFOPLIST_KEY_UILaunchScreen_Generation: YES
+    CODE_SIGN_STYLE: Automatic
+targets:
+  LocalAIStudio:
+    type: application
+    platform: iOS
+    sources:
+      - path: Sources
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.srgtcauliflour.LocalAIStudio
+        PRODUCT_NAME: "Local AI Studio"
+  LocalAIStudioTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: Tests
+    dependencies:
+      - target: LocalAIStudio
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.srgtcauliflour.LocalAIStudioTests
