@@ -83,6 +83,28 @@ actor ModelStore {
         return try modelsDirectory.appendingPathComponent("\(safeRepository)-\(safeFilename)")
     }
 
+    func coreMLBundleDestination(repository: String, variant: String) throws -> URL {
+        let safeRepository = repository.replacingOccurrences(of: "/", with: "-")
+            .replacingOccurrences(of: "..", with: "")
+        let safeVariant = variant.replacingOccurrences(of: "/", with: "-")
+            .replacingOccurrences(of: "..", with: "")
+        let destination = try modelsDirectory.appendingPathComponent("\(safeRepository)-\(safeVariant)", isDirectory: true)
+        try fileManager.createDirectory(at: destination, withIntermediateDirectories: true)
+        return destination
+    }
+
+    func bundleFileDestination(root: URL, remotePath: String, prefix: String) throws -> URL {
+        guard remotePath.hasPrefix(prefix) else { throw HuggingFaceHubError.invalidResponse }
+        let relative = String(remotePath.dropFirst(prefix.count))
+        let components = relative.split(separator: "/")
+        guard !components.isEmpty, !components.contains("..") else {
+            throw HuggingFaceHubError.invalidResponse
+        }
+        let destination = components.reduce(root) { $0.appendingPathComponent(String($1)) }
+        try fileManager.createDirectory(at: destination.deletingLastPathComponent(), withIntermediateDirectories: true)
+        return destination
+    }
+
     private func isStableDiffusionBundle(at url: URL) -> Bool {
         let required = ["TextEncoder.mlmodelc", "VAEDecoder.mlmodelc", "vocab.json", "merges.txt"]
         guard required.allSatisfy({ fileManager.fileExists(atPath: url.appendingPathComponent($0).path) }) else {
