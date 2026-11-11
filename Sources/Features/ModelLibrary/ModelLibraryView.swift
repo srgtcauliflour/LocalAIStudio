@@ -268,9 +268,7 @@ struct ModelLibraryView: View {
             errorMessage = error.localizedDescription
         }
     }
-}
 
-    
     @MainActor
     private func importFiles(_ result: Result<[URL], Error>) async {
         errorMessage = nil
