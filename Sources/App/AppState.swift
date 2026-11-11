@@ -38,6 +38,9 @@ final class AppState {
         if activeChatModelID == model.id { return }
 
         isLoadingChatModel = true
+        await imageRuntime.unload()
+        activeImageModelID = nil
+        imageRuntimeMessage = "Image model unloaded to free memory for chat."
         chatRuntimeMessage = "Loading \(model.name)…"
         defer { isLoadingChatModel = false }
         do {
@@ -64,6 +67,9 @@ final class AppState {
         if activeImageModelID == model.id { return }
 
         isLoadingImageModel = true
+        await chatRuntime.unload()
+        activeChatModelID = nil
+        chatRuntimeMessage = "Chat model unloaded to free memory for image generation."
         imageRuntimeMessage = "Loading \(model.name)…"
         defer { isLoadingImageModel = false }
         do {
