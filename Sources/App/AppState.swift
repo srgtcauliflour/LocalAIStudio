@@ -7,11 +7,18 @@ final class AppState {
     var selectedTab: StudioTab = .chat
     var installedModels: [LocalModel] = []
     var isScanningModels = false
+
     var activeChatModelID: String?
     var isLoadingChatModel = false
     var chatRuntimeMessage: String?
+
+    var activeImageModelID: String?
+    var isLoadingImageModel = false
+    var imageRuntimeMessage: String?
+
     @ObservationIgnored let modelStore = ModelStore()
     @ObservationIgnored let chatRuntime = LlamaCppChatRuntime()
+    @ObservationIgnored let imageRuntime = CoreMLImageGenerationRuntime()
 
     init() {
         Task { await refreshModels() }
@@ -47,6 +54,32 @@ final class AppState {
         await chatRuntime.unload()
         activeChatModelID = nil
         chatRuntimeMessage = "Model unloaded"
+    }
+
+    func activateImageModel(_ model: LocalModel) async {
+        guard model.task == .imageGeneration, model.format == .coreML else {
+            imageRuntimeMessage = "Choose an imported Core ML Stable Diffusion resource folder."
+            return
+        }
+        if activeImageModelID == model.id { return }
+
+        isLoadingImageModel = true
+        imageRuntimeMessage = "Loading \(model.name)…"
+        defer { isLoadingImageModel = false }
+        do {
+            try await imageRuntime.loadModel(at: model.url)
+            activeImageModelID = model.id
+            imageRuntimeMessage = "Ready • \(model.name)"
+        } catch {
+            activeImageModelID = nil
+            imageRuntimeMessage = error.localizedDescription
+        }
+    }
+
+    func unloadImageModel() async {
+        await imageRuntime.unload()
+        activeImageModelID = nil
+        imageRuntimeMessage = "Image model unloaded"
     }
 }
 

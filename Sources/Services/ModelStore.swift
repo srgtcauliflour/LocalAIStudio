@@ -29,23 +29,31 @@ actor ModelStore {
             let values = try? url.resourceValues(forKeys: [.fileSizeKey, .isDirectoryKey])
             let ext = url.pathExtension.lowercased()
             guard ext != "partial" else { return nil }
-            if values?.isDirectory == true && ext != "mlpackage" { return nil }
 
             let format: ModelFormat
             let task: ModelTask
-            switch ext {
-            case "gguf":
-                format = .gguf
-                task = .chat
-            case "mlpackage":
-                format = .mlpackage
-                task = .imageGeneration
-            case "safetensors":
-                format = .safetensors
-                task = .unclassified
-            default:
-                format = .other
-                task = .unclassified
+            if values?.isDirectory == true {
+                if ext == "mlpackage" {
+                    format = .mlpackage
+                    task = .imageGeneration
+                } else if isStableDiffusionBundle(at: url) {
+                    format = .coreML
+                    task = .imageGeneration
+                } else {
+                    return nil
+                }
+            } else {
+                switch ext {
+                case "gguf":
+                    format = .gguf
+                    task = .chat
+                case "safetensors":
+                    format = .safetensors
+                    task = .unclassified
+                default:
+                    format = .other
+                    task = .unclassified
+                }
             }
 
             let size = values?.isDirectory == true ? directorySize(at: url) : Int64(values?.fileSize ?? 0)
@@ -73,6 +81,17 @@ actor ModelStore {
             .replacingOccurrences(of: "..", with: "")
         let safeFilename = URL(fileURLWithPath: filename).lastPathComponent
         return try modelsDirectory.appendingPathComponent("\(safeRepository)-\(safeFilename)")
+    }
+
+    private func isStableDiffusionBundle(at url: URL) -> Bool {
+        let required = ["TextEncoder.mlmodelc", "VAEDecoder.mlmodelc", "vocab.json", "merges.txt"]
+        guard required.allSatisfy({ fileManager.fileExists(atPath: url.appendingPathComponent($0).path) }) else {
+            return false
+        }
+        let fullUNet = fileManager.fileExists(atPath: url.appendingPathComponent("Unet.mlmodelc").path)
+        let chunkOne = fileManager.fileExists(atPath: url.appendingPathComponent("UnetChunk1.mlmodelc").path)
+        let chunkTwo = fileManager.fileExists(atPath: url.appendingPathComponent("UnetChunk2.mlmodelc").path)
+        return fullUNet || (chunkOne && chunkTwo)
     }
 
     private func directorySize(at url: URL) -> Int64 {
