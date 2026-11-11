@@ -43,7 +43,7 @@ actor LlamaCppChatRuntime: ChatRuntime {
         prompt: String,
         systemPrompt: String,
         settings: GenerationSettings
-    ) -> AsyncThrowingStream<String, Error> {
+    ) async -> AsyncThrowingStream<String, Error> {
         AsyncThrowingStream { continuation in
             let task = Task {
                 do {
