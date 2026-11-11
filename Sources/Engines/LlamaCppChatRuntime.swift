@@ -101,7 +101,7 @@ actor LlamaCppChatRuntime: ChatRuntime {
             throw RuntimeError.tokenizationFailed
         }
 
-        var promptBatch = promptTokens.withUnsafeMutableBufferPointer { buffer in
+        let promptBatch = promptTokens.withUnsafeMutableBufferPointer { buffer in
             llama_batch_get_one(buffer.baseAddress!, Int32(buffer.count))
         }
         guard llama_decode(context, promptBatch) == 0 else {
