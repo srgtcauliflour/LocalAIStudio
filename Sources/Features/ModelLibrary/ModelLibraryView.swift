@@ -186,10 +186,33 @@ struct ModelLibraryView: View {
 
             if selectedRepository == model.id {
                 if repositoryFiles.isEmpty && !isLoadingFiles {
-                    Text("No downloadable GGUF files found.")
+                    Text(searchKind == "Chat" ? "No downloadable GGUF files found." : "No compiled Core ML bundle found for this variant.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
+                if searchKind == "Images" && !repositoryFiles.isEmpty {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("\(repositoryFiles.count) files • \(ByteCountFormatter.string(fromByteCount: repositoryFiles.reduce(Int64(0)) { $0 + ($1.size ?? 0) }, countStyle: .file))")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        Text("Variant: \(imageVariant). This is a large download; use Wi-Fi and allow enough free storage.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        Button {
+                            Task { await installImageBundle(model: model) }
+                        } label: {
+                            Label("Install Core ML image model", systemImage: "arrow.down.to.line")
+                        }
+                        .disabled(downloadingFile != nil)
+                        if downloadingFile == model.id {
+                            ProgressView(value: downloadProgress)
+                            Text("\(Int(downloadProgress * 100))% installed")
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                }
+                if searchKind == "Chat" {
                 ForEach(repositoryFiles) { file in
                     VStack(alignment: .leading, spacing: 8) {
                         HStack(alignment: .top) {
@@ -219,6 +242,7 @@ struct ModelLibraryView: View {
                     }
                     .padding(10)
                     .background(Color.studioBackground, in: RoundedRectangle(cornerRadius: 10))
+                }
                 }
             }
         }
