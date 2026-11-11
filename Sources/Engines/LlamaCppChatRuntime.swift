@@ -96,7 +96,7 @@ actor LlamaCppChatRuntime: ChatRuntime {
             systemPrompt: systemPrompt,
             userPrompt: prompt
         )
-        let promptTokens = try tokenize(formattedPrompt, vocabulary: vocab)
+        var promptTokens = try tokenize(formattedPrompt, vocabulary: vocab)
         guard !promptTokens.isEmpty else {
             throw RuntimeError.tokenizationFailed
         }
