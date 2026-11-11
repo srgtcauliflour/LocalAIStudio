@@ -1,14 +1,16 @@
 # Model compatibility
 
-Treat Hugging Face repositories as untrusted metadata. Inspect architecture, tensor formats, tokenizer assets, licence and pinned repository revision before offering installation.
+The catalogue currently searches public Hugging Face GGUF repositories and can download GGUF files. It does not yet certify that a downloaded file will run.
 
 | Task | Format | Runtime candidate | Status |
 |---|---|---|---|
-| Chat | GGUF | llama.cpp / Metal | Planned |
+| Chat | GGUF | llama.cpp / Metal | Integration next |
+| Chat / vision | GGUF multimodal | llama.cpp MTMD | Research |
 | Chat | MLX | MLX Swift | Research |
-| Chat / vision | Core ML | Core ML | Future |
-| Image generation | Stable Diffusion family | Mirage or stable-diffusion.cpp | Research |
-| Image generation | Core ML packages | Core ML | Future |
+| Image generation | Core ML packages | Core ML / Apple ml-stable-diffusion | Evaluation |
+| Image generation | GGUF diffusion | stable-diffusion.cpp family | Evaluation; check ggml symbol compatibility |
+
+Before recommending a model, inspect its architecture, tensor format, tokenizer assets, model card, licence and pinned repository revision. Search results and licence tags are metadata, not legal advice.
 
 The catalogue should filter by task, architecture, quantisation, size and licence; display the model card and licence; support resumable downloads and integrity checks; and never execute repository-provided scripts automatically.
 
