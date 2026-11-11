@@ -47,7 +47,7 @@ actor LlamaCppChatRuntime: ChatRuntime {
         AsyncThrowingStream { continuation in
             let task = Task {
                 do {
-                    try await self.generateTokens(
+                    try self.generateTokens(
                         prompt: prompt,
                         systemPrompt: systemPrompt,
                         settings: settings,
@@ -88,7 +88,9 @@ actor LlamaCppChatRuntime: ChatRuntime {
         }
 
         llama_memory_clear(llama_get_memory(context), true)
-        let vocab = llama_model_get_vocab(model)
+        guard let vocab = llama_model_get_vocab(model) else {
+            throw RuntimeError.tokenizationFailed
+        }
         let formattedPrompt = makePrompt(
             model: model,
             systemPrompt: systemPrompt,
