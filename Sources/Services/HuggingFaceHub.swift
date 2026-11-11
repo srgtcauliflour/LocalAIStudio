@@ -86,7 +86,8 @@ struct HuggingFaceHub {
 
     func coreMLBundleFiles(in repository: String, variant: String = "original/compiled") async throws -> [HuggingFaceFile] {
         let prefix = variant.hasSuffix("/") ? variant : variant + "/"
-        let files = try await treeFiles(in: repository).filter {
+        let allFiles = try await treeFiles(in: repository)
+        let files = allFiles.filter {
             $0.type != "directory" && $0.path.hasPrefix(prefix)
         }
         guard files.contains(where: { $0.path.hasSuffix("TextEncoder.mlmodelc/model.mil") || $0.path.contains("TextEncoder.mlmodelc/") }),
@@ -106,7 +107,8 @@ struct HuggingFaceHub {
         components.path = "/api/models/\(repository)/tree/main"
         components.queryItems = [
             URLQueryItem(name: "recursive", value: "true"),
-            URLQueryItem(name: "expand", value: "true")
+            URLQueryItem(name: "expand", value: "true"),
+            URLQueryItem(name: "limit", value: "1000")
         ]
         guard let url = components.url else { throw HuggingFaceHubError.invalidResponse }
         let (data, response) = try await session.data(from: url)
