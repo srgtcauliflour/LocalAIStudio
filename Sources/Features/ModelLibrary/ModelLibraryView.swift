@@ -141,7 +141,7 @@ struct ModelLibraryView: View {
             .navigationBarTitleDisplayMode(.inline)
             .fileImporter(
                 isPresented: $showingFileImporter,
-                allowedContentTypes: [.data],
+                allowedContentTypes: [.data, .folder],
                 allowsMultipleSelection: true
             ) { result in
                 Task { await importFiles(result) }
