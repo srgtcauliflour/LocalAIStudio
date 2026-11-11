@@ -10,7 +10,9 @@ actor CoreMLImageGenerationRuntime: ImageGenerationRuntime {
 
     func loadModel(at url: URL) async throws {
         await unload()
-        guard url.hasDirectoryPath else {
+        var isDirectory: ObjCBool = false
+        guard FileManager.default.fileExists(atPath: url.path, isDirectory: &isDirectory),
+              isDirectory.boolValue else {
             throw RuntimeError.unsupportedModel
         }
 
