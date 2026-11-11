@@ -2,7 +2,7 @@ import Foundation
 
 protocol ChatRuntime: Sendable {
     func loadModel(at url: URL) async throws
-    func generate(prompt: String, systemPrompt: String, settings: GenerationSettings) -> AsyncThrowingStream<String, Error>
+    func generate(prompt: String, systemPrompt: String, settings: GenerationSettings) async -> AsyncThrowingStream<String, Error>
     func unload() async
 }
 
