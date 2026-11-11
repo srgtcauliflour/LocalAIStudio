@@ -34,6 +34,7 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.srgtcauliflour.LocalAIStudio
         PRODUCT_NAME: "Local AI Studio"
+        PRODUCT_MODULE_NAME: LocalAIStudio
   LocalAIStudioTests:
     type: bundle.unit-test
     platform: iOS
